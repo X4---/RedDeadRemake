@@ -760,7 +760,7 @@ void comp_main()
     //gl_GlobalInvocationID.x [60 * 8 =  0 ~ 480]
     //gl_GlobalInvocationID.y [34 * 8 =  0 ~ 272]
 
-    float3 SphereCenter = float3(asfloat(_29.Load4(1796)).zw, -318000.0f);        //对应的单位为10m //地球的球心
+    float3 _280 = float3(asfloat(_29.Load4(1796)).zw, -318000.0f);        //对应的单位为10m //地球的球心
 
     uint _284 = gl_GlobalInvocationID.x * 2u;               // 2x
     uint _286 = gl_GlobalInvocationID.y * 2u;               // 2y
@@ -782,7 +782,7 @@ void comp_main()
     float3 _311 = float3((_306 * float2(2.0f, -2.0f)) - float2(1.0f, -1.0f), 1.0f);   // 半分辨率下的NDC xy， NDC1
 
     float _323 = dot(_311, _77_m11.xyz);                                            //TranslatedWorldViewDirZ
-    float3 TranslatedWorldViewDir = float3(dot(_311, _77_m9.xyz), dot(_311, _77_m10.xyz), _323);      //NDC To WorldSpaceViewDir
+    float3 _324 = float3(dot(_311, _77_m9.xyz), dot(_311, _77_m10.xyz), _323);      //NDC To WorldSpaceViewDir
 
 
 
@@ -797,7 +797,7 @@ void comp_main()
     float2 _349 = abs((_306 * 2.0f) - 1.0f.xx);                         //实际半分辨率的重新映射【1，0】【0，1】
 
 
-    float MaskNoise64 = frac(
+    float _361 = frac(
                         _70.Load(
                                     int4(int4(
                                                 int2(
@@ -833,16 +833,16 @@ void comp_main()
     [branch]
     if (_77_m50.z < _329)                //1600米 《= 对应的高度米
     {
-        float absViewDirZ = abs(_323);                     //abs(ViewZ)
-        float3 CameraPosition = -_9_m4.xyz;                   //ViewOrgin
+        float _370 = abs(_323);                     //abs(ViewZ)
+        float3 _378 = -_9_m4.xyz;                   //ViewOrgin
 
         //_77_m27 = [200, 1240 0.00096 319240]      //TopLevelSphere
         float _381 = 318000.0f + _77_m27.y;         //水平面上高度为12400 米 的大气TopBoundary  ==  C
-        float3 _382 = CameraPosition - SphereCenter;                  //ViewOrgin - SphereCenter      == A    //计算ViewOrigin 在新的坐标下的位置。 新的坐标系的原点 SphereCenter//WorldSpace
+        float3 _382 = _378 - _280;                  //ViewOrgin - SphereCenter      == A    //计算ViewOrigin 在新的坐标下的位置。 新的坐标系的原点 _280//WorldSpace
 
                                                     // 324 = B 
-        float _383 = dot(TranslatedWorldViewDir, TranslatedWorldViewDir);               // |B|^2
-        float _384 = dot(_382, TranslatedWorldViewDir);               // |A|B|*costheaa
+        float _383 = dot(_324, _324);               // |B|^2
+        float _384 = dot(_382, _324);               // |A|B|*costheaa
 
         float _385 = 2.0f * _384;                   //2|A|B|costheta
         float _392 = (_385 * _385) - (
@@ -885,7 +885,7 @@ void comp_main()
                         _409, 
 
                         //_29.Load(364) = 
-                        (CameraPosition.z - asfloat(_29.Load(364))) / max(-_323, 9.9999999747524270787835121154785e-07f) );
+                        (_378.z - asfloat(_29.Load(364))) / max(-_323, 9.9999999747524270787835121154785e-07f) );
                         //ViewOrigin.Z - T / max(-323， )
 
                     //再次进行对应的位置修正，视线朝向下方的过程中， 其最大的距离不超过 ViewHeight 朝着对应的角度碰撞到地表的距离
@@ -895,8 +895,8 @@ void comp_main()
             _421 = _409;
         }
 
-        float MaxRayTracingDistance = min(_421, _77_m37.w);  //同时设定最大的大气厚度的距离， 公司版本为 22000
-        float3 _429 = normalize(TranslatedWorldViewDir);      //Normalized TranslatedViewDir
+        float _424 = min(_421, _77_m37.w);  //同时设定最大的大气厚度的距离， 公司版本为 22000
+        float3 _429 = normalize(_324);      //Normalized TranslatedViewDir
 
 
         //_77_m49.xyz = 当前的
@@ -909,11 +909,11 @@ void comp_main()
         float _449 = _448 * _448;
         float _458 = (0.079577468335628509521484375f * ((1.0f - _449) / pow((1.0f + _449) - ((_77_m48.y * 1.33333337306976318359375f) * _434), 1.5f))) * _77_m48.x;
 
-        float _459 = MaxRayTracingDistance - _77_m50.z;  //最大可以检测的距离 - Ray Intersect
+        float _459 = _424 - _77_m50.z;  //最大可以检测的距离 - Ray Intersect
 
                                                             //将可以检测的最大距离进行分块，
                                                             // _459 / max(8, 分块数量)   
-        float BasicBlockLength = max(                                   // 单位块的距离
+        float _464 = max(                                   // 单位块的距离
                             _459 / max(                     
                                         8.0f,               // 最小的块数量
                                         round(              // 分块数量 = _459 / 125.0  块距离
@@ -921,7 +921,7 @@ void comp_main()
                                                         _77_m26.w,                      //对应的云层进行Intersect 距离分块的最小块距离
                                                         _77_m26.w * 0.5f, 
                                                         clamp(                          //abs ViewDirZ norli
-                                                              (absViewDirZ - 0.5f) * 2.0f, 
+                                                              (_370 - 0.5f) * 2.0f, 
                                                                 0.0f, 
                                                                 1.0f)
                                                         )
@@ -931,143 +931,143 @@ void comp_main()
                             9.9999999747524270787835121154785e-07f); //0.000001
 
 
-        //MaskNoise64 噪声
+        //_361 噪声
 
-        float FirstRayDistance = _77_m50.z + (MaskNoise64 * BasicBlockLength);         //基础的Ray Intersect 距离  + 噪声 * 单位块的距离， 开始的RayIntersect distance
+        float _466 = _77_m50.z + (_361 * _464);         //基础的Ray Intersect 距离  + 噪声 * 单位块的距离， 开始的RayIntersect distance
 
         float4 _468;
-        float CurrentRecordRayTracingDistance;
+        float _481;
         float _483;
-        float TotalTransmittance;
+        float _489;
 
         _468 = 0.0f.xxxx;
-        CurrentRecordRayTracingDistance = _77_m50.z;               // 初始RayTracing Distance
+        _481 = _77_m50.z;               // 初始RayTracing Distance
         _483 = 0.0f;
-        TotalTransmittance = 1.0f;                    // 初始的Ray Transmittance 值
+        _489 = 1.0f;                    // 初始的Ray Transmittance 值
 
-        int NextLoopIndex;
+        int _486;
         float4 _469;
-        float NewRayDistanceFadePar;
+        float _472;
         bool _474;
-        float NewRayTracingBlockLength;
+        float _476;
         int _478;
-        int NewPointFadeCount;
-        float NewRecordRayTracingDistance;
+        int _480;
+        float _482;
         float _484;
-        float NextRayTracingDistance;
-        float NewTransmittance;
-        float CurrentRayDistanceFadePar = _77_m40.w;         //0.35
-        bool PreFrameIsCloud = false;
+        float _488;
+        float _490;
+        float _471 = _77_m40.w;         //0.35
+        bool _473 = false;
 
-        float CurrentRayTracingBlockLength = BasicBlockLength;              //单位块的距离
+        float _475 = _464;              //单位块的距离
 
         int _477 = 4;
-        int CurrentPointFadeCount = 0;
-        int LoopIndex = 0;
+        int _479 = 0;
+        int _485 = 0;
 
-        float CurrentRayTracingDistance = FirstRayDistance;              //开始的栈Frame 对应的效果
+        float _487 = _466;              //开始的栈Frame 对应的效果
 
         [loop]
         for (; 
             ( 
-                (TotalTransmittance > _77_m37.z) &&   //对应的Transmittance 衰减值
-                (CurrentRayTracingDistance <= MaxRayTracingDistance)) &&      //_487 对应的当前的Intersect RayDistance， MaxRayTracingDistance对应的大气的长度
-                (LoopIndex < 1000);          //Loop Index
+                (_489 > _77_m37.z) &&   //对应的Transmittance 衰减值
+                (_487 <= _424)) &&      //_487 对应的当前的Intersect RayDistance， _424对应的大气的长度
+                (_485 < 1000);          //Loop Index
             
                 _468 = _469,            //_468 初始值 为 [0,0,0,0]
-                CurrentRayDistanceFadePar = NewRayDistanceFadePar,            //NewRayDistanceFadePar 如果是cloudDensity 》 的部分，最终将修正 一个_77_m40.w  的常量值
-                PreFrameIsCloud = _474,            //_474 Section中是否存在浓度够
-                CurrentRayTracingBlockLength = NewRayTracingBlockLength,            //NewRayTracingBlockLength 新的单位块的距离
+                _471 = _472,            //_472 如果是cloudDensity 》 的部分，最终将修正 一个_77_m40.w  的常量值
+                _473 = _474,            //_474 Section中是否存在浓度够
+                _475 = _476,            //_476 新的单位块的距离
                 _477 = _478,            //_478 记录剩余的RayTracing Section Index
-                CurrentPointFadeCount = NewPointFadeCount,            //NewPointFadeCount 记录当前的RayTracing Section index
-                CurrentRecordRayTracingDistance = NewRecordRayTracingDistance,            //CurrentRecordRayTracingDistance 最终的记录的深度，  
+                _479 = _480,            //_480 记录当前的RayTracing Section index
+                _481 = _482,            //_481 最终的记录的深度，  
                 _483 = _484, 
-                LoopIndex = NextLoopIndex,            //NextLoopIndex 新的index  
-                CurrentRayTracingDistance = NextRayTracingDistance,            //NextRayTracingDistance 新的RayTracing Distance
-                TotalTransmittance = NewTransmittance)            //NewTransmittance 新的Transmittance
+                _485 = _486,            //_486 新的index  
+                _487 = _488,            //_488 新的RayTracing Distance
+                _489 = _490)            //_490 新的Transmittance
         {
             do
             {
-                float3 TargetRayOffset = TranslatedWorldViewDir * CurrentRayTracingDistance;      //TranslatedViewDir *  RayDistance
-                float3 SamplePosition = CameraPosition + TargetRayOffset;      //ViewOrigin + TranslatedViewDir * RayDistance   == CheckPointWorldPosition
+                float3 _502 = _324 * _487;      //TranslatedViewDir *  RayDistance
+                float3 _503 = _378 + _502;      //ViewOrigin + TranslatedViewDir * RayDistance   == CheckPointWorldPosition
 
-                float BasicCloudDisHeightPar = clamp(
+                float _511 = clamp(
                                     (
-                                        (length(SamplePosition - SphereCenter) - 318000.0f) - _77_m27.x       // CheckPointWorldPosition - SphereCenter - 318000,  ModifyCheckPointHeight  - _77_m27.x
+                                        (length(_503 - _280) - 318000.0f) - _77_m27.x       // CheckPointWorldPosition - SphereCenter - 318000,  ModifyCheckPointHeight  - _77_m27.x
                                     ) * 0.00076923076994717121124267578125f,                // * 1/1300
                                     0.0f, 
                                     1.0f
                                 );
                            // = ViewHeight * Scale;
 
-                float3 BasicCloudSampleWorldPosModify = float3(_77_m29.xy, 0.0f) * BasicCloudDisHeightPar;
-                float3 BasicCloudSampleWorldPos = SamplePosition + BasicCloudSampleWorldPosModify;      //CheckPointWorldPosition + BasicCloudDisHeightPar * Dir
+                float3 _517 = float3(_77_m29.xy, 0.0f) * _511;
+                float3 _518 = _503 + _517;      //CheckPointWorldPosition + _511 * Dir
 
                 //这个部分的代码需要解决的核心问题， 就是针对每一个Checkpoint WorldPosition, 如何确定对应的云图所Check 的UV映射关系， 暂时看来，通过修正之后的高度，高度确定一个UV偏移的距离
 
 
-                float4 BasicCloudSampleValue = _82.SampleLevel(_7, (BasicCloudSampleWorldPos.xy * _77_m28.w) + 0.5f.xx, 0.0f);   //对应的云图所对应的 WorldPosition 以及采样UV 修正
-                float AltitudeFixPar = max(0.0f, BasicCloudDisHeightPar - BasicCloudSampleValue.z);                                      //采样点云层的高度修正值  Lut 高度修正的系数
+                float4 _528 = _82.SampleLevel(_7, (_518.xy * _77_m28.w) + 0.5f.xx, 0.0f);   //对应的云图所对应的 WorldPosition 以及采样UV 修正
+                float _531 = max(0.0f, _511 - _528.z);                                      //采样点云层的高度修正值  Lut 高度修正的系数
 
-                                                                                            //float2 c = SampleCloudMap(rap.p)   BasicCloudSampleValue
-                                                                                            //c.xy = BasicCloudSampleValue.xy
-                float cloudLutWindPower;
-                float BasicDesAndLutHeightFixCloudDensity;
+                                                                                            //float2 c = SampleCloudMap(rap.p)   _528
+                                                                                            //c.xy = _528.xy
+                float _557;
+                float _558;
 
                 [branch]
-                if (true && (AltitudeFixPar > 0.0f))                                                  //ViewHeight *Scale - 修正  》 0
+                if (true && (_531 > 0.0f))                                                  //ViewHeight *Scale - 修正  》 0
                 {
                                                                                             //基于高度的形状修正， 从一张atlas 通过 weather parameters 来生成
-                    float4 ShapeLutValue = _81.SampleLevel(_83, float2(0.0f, AltitudeFixPar), 0.0f);           //高度修正之后的对应的贴图  利用经过修正之后的高度采样一张贴图，或者了两个高度上的衰减值
-                                                                                            //ShapeLutValue cloudLut()
-                                                                                            //AltitudeFixPar cloudLutaltitude
+                    float4 _540 = _81.SampleLevel(_83, float2(0.0f, _531), 0.0f);           //高度修正之后的对应的贴图  利用经过修正之后的高度采样一张贴图，或者了两个高度上的衰减值
+                                                                                            //_540 cloudLut()
+                                                                                            //_531 cloudLutaltitude
 
-                                                                                            //ShapeLutValue cloud Z controls the softness of the noise
+                                                                                            //_540 cloud Z controls the softness of the noise
 
                                                                                             //_77_m56.xz = g_CloudShape.xz
                                                                                             //_77_m56.yw = g_CloudShape.yw
 
-                    float2 cloudLutxy = 1.0f.xx - ShapeLutValue.xy;                                        //cloudLutxy = 1.0f.xx - ShapeLutValue.xy
-                    cloudLutWindPower = ShapeLutValue.w;                                                   //cloudLutWindPower cloudLut.w   对应的云层高度风场的强度。
-                    BasicDesAndLutHeightFixCloudDensity = min(
+                    float2 _543 = 1.0f.xx - _540.xy;                                        //_543 = 1.0f.xx - _540.xy
+                    _557 = _540.w;                                                          //_557 cloudLut.w   对应的云层高度风场的强度。
+                    _558 = min(
                                 1.0f, 
                                 dot(
-                                    float2(1.0f, ShapeLutValue.z), 
+                                    float2(1.0f, _540.z), 
                                     smoothstep(
-                                                _77_m56.xz + cloudLutxy, 
-                                                _77_m56.yw + cloudLutxy, 
-                                                BasicCloudSampleValue.xy                                      //对应云图的RG 通道
+                                                _77_m56.xz + _543, 
+                                                _77_m56.yw + _543, 
+                                                _528.xy                                      //对应云图的RG 通道
                                             ).xy                                             
                                     )                                                        //                          min, max, c.xy
-                                );                                                           //BasicDesAndLutHeightFixCloudDensity density.xy = smoothstep(g_cloudShape.xz + 1.0 - cloudLut.xy, g_CloudShape + 1.0 - cloudLut.xy, c.xy);
+                                );                                                           //_558 density.xy = smoothstep(g_cloudShape.xz + 1.0 - cloudLut.xy, g_CloudShape + 1.0 - cloudLut.xy, c.xy);
                                                                                              //                = smoothstep(g_cloudShape.xz + cloudLut.xy + 1.0 - 2*cloudLUt.xy, ...)
                                                                                              //                = BasicDensity + 1.0 - 2 *cloudLut.xy
                                                                                              //                =
-                }                                                                            //BasicDesAndLutHeightFixCloudDensity density = min(1,0f,  density.x + cloudLut.z * density.y);
+                }                                                                            //_558 density = min(1,0f,  density.x + cloudLut.z * density.y);
                                                                                              //             = BasicDensity.x + 1.0 - 2*cloudLut.x + cloudLUt.z * (BasicDensity.y + 1.0 - 2 * CloudLut.y)
                                                                                              //             =
                                                                                            
 
                 else                                                                         //在云层下
                 {
-                    cloudLutWindPower = 0.0f;
-                    BasicDesAndLutHeightFixCloudDensity = 0.0f;
+                    _557 = 0.0f;
+                    _558 = 0.0f;
                 }
 
-                //BasicDesAndLutHeightFixCloudDensity 对应的SamplePoint 所对应 cloud Density
-                //cloudLutWindPower 对应的SamplePoint 对应的 cloudLut.w
+                //_558 对应的SamplePoint 所对应 cloud Density
+                //_557 对应的SamplePoint 对应的 cloudLut.w
 
-                bool BIsCloudOfThisSample = BasicDesAndLutHeightFixCloudDensity >                              //如果当前采样获得的Cloud Density 已经足够大的化
+                bool _569 = _558 >                              //如果当前采样获得的Cloud Density 已经足够大的化
                                 (_77_m12.y *        //0.20
                                     min(            //最大值为1， 依赖于剩余路径长度
                                             clamp(
-                                                    (MaxRayTracingDistance - CurrentRayTracingDistance) * 9.9999997473787516355514526367188e-05f,         //剩余Raydistance  /10000
+                                                    (_424 - _487) * 9.9999997473787516355514526367188e-05f,         //剩余Raydistance  /10000
                                                     0.0f, 
                                                     1.0f
                                                 ), 
                                                 
                                             1.0f - clamp(
-                                                            absViewDirZ * 1.33333337306976318359375f,                      //abs(ViewDirZ)
+                                                            _370 * 1.33333337306976318359375f,                      //abs(ViewDirZ)
                                                             0.0f, 
                                                             1.0f)
                                         )
@@ -1076,44 +1076,44 @@ void comp_main()
 
                 if (
                     (
-                        (float(BIsCloudOfThisSample) > 0.0f) && 
-                        (CurrentPointFadeCount < _477)                       //CurrentRayTracing Section index < 剩余的RayTracing Section index 初始值为4， 对应的剩余Distance/maxDistance * 4 拆分为
+                        (float(_569) > 0.0f) && 
+                        (_479 < _477)                       //CurrentRayTracing Section index < 剩余的RayTracing Section index 初始值为4， 对应的剩余Distance/maxDistance * 4 拆分为
                     ) && true)                              //满足当前条件的话，当前Sample点 完结
                 {
-                    float DistanceFadeScale = lerp(
+                    float _583 = lerp(
                                         1.0f, 
                                         _77_m40.w,          //RayTracing 距离衰减参数基础 0.35
-                                        clamp((TotalTransmittance - _77_m12.w) / (1.0f - _77_m12.w), 0.0f, 1.0f));     //77_m12.w = -1
+                                        clamp((_489 - _77_m12.w) / (1.0f - _77_m12.w), 0.0f, 1.0f));     //77_m12.w = -1
                     
-                    float NewBlockLength = CurrentRayTracingBlockLength * DistanceFadeScale;               //新的RayTracing 距离将在现在的基础上进行衰减。
+                    float _586 = _475 * _583;               //新的RayTracing 距离将在现在的基础上进行衰减。
 
                     _469 = _468;
-                    NewRayDistanceFadePar = DistanceFadeScale;                            //距离衰减系数
+                    _472 = _583;                            //距离衰减系数
                     _474 = true;                            //当前存在cloud 浓度够的Sample点
 
-                    NewRayTracingBlockLength = NewBlockLength;                            //新的单位块的长度
+                    _476 = _586;                            //新的单位块的长度
                     _478 = _477;
-                    NewPointFadeCount = CurrentPointFadeCount + 1;
-                    NewRecordRayTracingDistance = CurrentRecordRayTracingDistance;
+                    _480 = _479 + 1;
+                    _482 = _481;
                     _484 = _483;
 
-                    NextRayTracingDistance = max(                              //新的RayTracing长度
-                                    _77_m50.z + (NewBlockLength * MaskNoise64),      //基础rayTracing Distance + 噪声 * 新的距离
-                                    CurrentRayTracingDistance - (CurrentRayTracingBlockLength * (1.0f - DistanceFadeScale))   //当前RayTracing Distance - （当前块长度* 衰减掉的部分）
+                    _488 = max(                              //新的RayTracing长度
+                                    _77_m50.z + (_586 * _361),      //基础rayTracing Distance + 噪声 * 新的距离
+                                    _487 - (_475 * (1.0f - _583))   //当前RayTracing Distance - （当前块长度* 衰减掉的部分）
                             );          
 
-                    NewTransmittance = TotalTransmittance;
+                    _490 = _489;
                     break;
                 }
 
 
                 //Section Fog 对应的低高度地区，相关的雾效果浓度 或者噪声
-                float3 _597 = (SamplePosition * asfloat(_29.Load3(380))) + asfloat(_29.Load3(392));       //CheckPointWorldPosition 相关的修正
-                float _598 = SamplePosition.z;
+                float3 _597 = (_503 * asfloat(_29.Load3(380))) + asfloat(_29.Load3(392));       //CheckPointWorldPosition 相关的修正
+                float _598 = _503.z;
                 float _632;
                 if (true && (_598 < asfloat(_29.Load(376))))                                    //如果对应的的CheckPointWorldPosition 小于某一个特定的值
                 {
-                    float3 _612 = (SamplePosition * _77_m20.xyz) + _77_m21.xyz;
+                    float3 _612 = (_503 * _77_m20.xyz) + _77_m21.xyz;
                     float _613 = _612.z;
                     float4 _621 = _79.SampleLevel(_74, float3(_597.xy, _613).xy, 0.0f);         //对应的雾效果  的相关的
                     float _629 = 1.0f - min(1.0f, abs((_613 - _621.x) / _621.y));               
@@ -1132,26 +1132,26 @@ void comp_main()
 
                 //1x 3D Perlin/Worley noise samples
                 //Displaced via 2D noise + wind offset
-                if (BasicDesAndLutHeightFixCloudDensity > 0.0f)                                            //对应的云的密度
+                if (_558 > 0.0f)                                            //对应的云的密度
                 {
                     float _665;
                     do
                     {
-                        if (BasicDesAndLutHeightFixCloudDensity == 0.0f)
+                        if (_558 == 0.0f)
                         {
                             _665 = 0.0f;
                             break;
                         }
-                        //cloudLut Sampe Height AltitudeFixPar
+                        //cloudLut Sampe Height _531
                                                                                                             //density = rescale(noise, CloudLut.z, density)
                                                                                              //                       = saturate( (density - noise) / (density - cloudLut.z) )
-                        float2 _657 = (_77_m52.yw * AltitudeFixPar) + _77_m52.xz;                                     //RescaleVmin, RescaleVmax
+                        float2 _657 = (_77_m52.yw * _531) + _77_m52.xz;                                     //RescaleVmin, RescaleVmax
                         float _658 = _657.x;
-                        _665 = BasicDesAndLutHeightFixCloudDensity * clamp(
+                        _665 = _558 * clamp(
                                                 (
                                                     _78.SampleLevel( 
                                                                         _7, 
-                                                                        (SamplePosition + _77_m39.xyz) * _77_m37.y, 0.0f              //3DNoiseSample - 658
+                                                                        (_503 + _77_m39.xyz) * _77_m37.y, 0.0f              //3DNoiseSample - 658
                                                                     ).x - _658
                                                 ) / (_657.y - _658),                                                        //(3DNoiseSample - vmin) / (vmax - vmin)
                                                 
@@ -1159,19 +1159,19 @@ void comp_main()
                                                 1.0f
                                             );
 
-                        //_665 = BasicDesAndLutHeightFixCloudDensity (cloudDensity)  * rescale( )
+                        //_665 = _558 (cloudDensity)  * rescale( )
 
                         break;
 
                     } while(false);
 
-                    float3 _672 = (SamplePosition + _77_m38.xyz) * _77_m49.w;                 //DisplaceNoise WorldPosition
+                    float3 _672 = (_503 + _77_m38.xyz) * _77_m49.w;                 //DisplaceNoise WorldPosition
 
 
                     float _704 = 1.0f - _78.SampleLevel(
                                                             _7,  //SamplerState
 
-                                                            ((SamplePosition + (_77_m38.xyz * 1.5f)) * _77_m37.x)                         //Displaced via wind offset
+                                                            ((_503 + (_77_m38.xyz * 1.5f)) * _77_m37.x)                         //Displaced via wind offset
                                                             + 
                                                             (
                                                                 (
@@ -1186,20 +1186,20 @@ void comp_main()
                                                                         )  - 1.0f.xxx
                                                                     )
                                                                 ) * 
-                                                                    (_77_m54.x + (_77_m54.y * cloudLutWindPower))                            //2D noise Power Offset
+                                                                    (_77_m54.x + (_77_m54.y * _557))                            //2D noise Power Offset
                                                             ), 0.0f
-                                                        ).x;                                                                    //cloudLutWindPower 对应的Clound云层所在的 风场强度
+                                                        ).x;                                                                    //_557 对应的Clound云层所在的 风场强度
 
                     _715 = clamp(
                                     (_665 - _704) / 
-                                    ((   (_77_m53.y * cloudLutWindPower) + _77_m53.x) - _704), 
+                                    ((   (_77_m53.y * _557) + _77_m53.x) - _704), 
                                     
                                     0.0f, 
                                     1.0f);
                 }
                 else
                 {
-                    _715 = BasicDesAndLutHeightFixCloudDensity;                                                                                                 //
+                    _715 = _558;                                                                                                 //
                 }
 
                 //_715 经过3D Noise 以及 2x2D Displacement & Wind 修正之后的 cloudDenisy
@@ -1210,7 +1210,7 @@ void comp_main()
                 [branch]
                 if (_77_m44.x > 0.0f)
                 {
-                    _744 = (1.0f - clamp(AltitudeFixPar * 10.0f, 0.0f, 1.0f)) * (_77_m44.x * clamp(BasicCloudSampleValue.y - _77_m44.y, 0.0f, 1.0f));                  //采样点云层高度修正？
+                    _744 = (1.0f - clamp(_531 * 10.0f, 0.0f, 1.0f)) * (_77_m44.x * clamp(_528.y - _77_m44.y, 0.0f, 1.0f));                  //采样点云层高度修正？
                 }
                 else
                 {
@@ -1218,7 +1218,7 @@ void comp_main()
                 }
 
 
-                float CloudDensity = _715 + (                                                                       
+                float _748 = _715 + (                                                                       
                                         (
                                             (_632 +                                                 //雾效果浓度
                                                 (
@@ -1228,9 +1228,9 @@ void comp_main()
                                         ) * _77_m31[0].w                                            //雾效果的流动。
                                     );
 
-                //CloudDensity +雾 效果扰动的 cloud Density
+                //_748 +雾 效果扰动的 cloud Density
 
-                float4 _760 = mul(_73_m13, float4(TargetRayOffset + BasicCloudSampleWorldPosModify, 1.0f));
+                float4 _760 = mul(_73_m13, float4(_502 + _517, 1.0f));
                 float _799;
                 do
                 {
@@ -1274,7 +1274,7 @@ void comp_main()
 
                 float4 _806 = _75.SampleLevel(_74, _597.xy, 0.0f);  //噪声
                 float _807 = _806.y;
-                float _833 = 1.0f - (sqrt(clamp((TargetRayOffset.z * _73_m0[3].x) + _73_m0[3].y, 0.0f, 1.0f)) * _77_m42.z);
+                float _833 = 1.0f - (sqrt(clamp((_502.z * _73_m0[3].x) + _73_m0[3].y, 0.0f, 1.0f)) * _77_m42.z);
                 float _834 = _833 * _833;
                 float _835 = (
                                 max(_77_m43.y, _799 * _799) * 
@@ -1293,15 +1293,15 @@ void comp_main()
 
 
 
-                if (CloudDensity > 0.0f)
+                if (_748 > 0.0f)
                 {
                     bool _852 = _715 > 0.0f;
                     float2 _1379;
                     if (_852)
                     {
-                        float3 _865 = BasicCloudSampleWorldPos + (_77_m28.xyz * 0.25f);
+                        float3 _865 = _518 + (_77_m28.xyz * 0.25f);
                         float4 _870 = _82.SampleLevel(_7, (_865.xy * _77_m28.w) + 0.5f.xx, 0.0f);
-                        float _879 = max(0.0f, clamp(((length(_865 - SphereCenter) - 318000.0f) - _77_m27.x) * 0.00076923076994717121124267578125f, 0.0f, 1.0f) - _870.z);
+                        float _879 = max(0.0f, clamp(((length(_865 - _280) - 318000.0f) - _77_m27.x) * 0.00076923076994717121124267578125f, 0.0f, 1.0f) - _870.z);
                         float4 _884 = _81.SampleLevel(_83, float2(0.0f, _879), 0.0f);
                         float2 _887 = 1.0f.xx - _884.xy;
                         float _900 = min(1.0f, dot(float2(1.0f, _884.z), smoothstep(_77_m56.xz + _887, _77_m56.yw + _887, _870.xy).xy));
@@ -1320,9 +1320,9 @@ void comp_main()
                         } while(false);
                         float3 _940 = _77_m38.xyz * 1.5f;
                         float _949 = 1.0f - _78.SampleLevel(_7, (_865 + _940) * _77_m37.x, 0.0f).x;
-                        float3 _966 = BasicCloudSampleWorldPos + (_77_m28.xyz * 0.5f);
+                        float3 _966 = _518 + (_77_m28.xyz * 0.5f);
                         float4 _971 = _82.SampleLevel(_7, (_966.xy * _77_m28.w) + 0.5f.xx, 0.0f);
-                        float _980 = max(0.0f, clamp(((length(_966 - SphereCenter) - 318000.0f) - _77_m27.x) * 0.00076923076994717121124267578125f, 0.0f, 1.0f) - _971.z);
+                        float _980 = max(0.0f, clamp(((length(_966 - _280) - 318000.0f) - _77_m27.x) * 0.00076923076994717121124267578125f, 0.0f, 1.0f) - _971.z);
                         float4 _983 = _81.SampleLevel(_83, float2(0.0f, _980), 0.0f);
                         float2 _986 = 1.0f.xx - _983.xy;
                         float _995 = min(1.0f, dot(float2(1.0f, _983.z), smoothstep(_77_m56.xz + _986, _77_m56.yw + _986, _971.xy).xy));
@@ -1340,9 +1340,9 @@ void comp_main()
                             break;
                         } while(false);
                         float _1035 = 1.0f - _78.SampleLevel(_7, (_966 + _940) * _77_m37.x, 0.0f).x;
-                        float3 _1048 = BasicCloudSampleWorldPos + (_77_m28.xyz * 1.0f);
+                        float3 _1048 = _518 + (_77_m28.xyz * 1.0f);
                         float4 _1053 = _82.SampleLevel(_7, (_1048.xy * _77_m28.w) + 0.5f.xx, 0.0f);
-                        float _1062 = max(0.0f, clamp(((length(_1048 - SphereCenter) - 318000.0f) - _77_m27.x) * 0.00076923076994717121124267578125f, 0.0f, 1.0f) - _1053.z);
+                        float _1062 = max(0.0f, clamp(((length(_1048 - _280) - 318000.0f) - _77_m27.x) * 0.00076923076994717121124267578125f, 0.0f, 1.0f) - _1053.z);
                         float4 _1065 = _81.SampleLevel(_83, float2(0.0f, _1062), 0.0f);
                         float2 _1068 = 1.0f.xx - _1065.xy;
                         float _1077 = min(1.0f, dot(float2(1.0f, _1065.z), smoothstep(_77_m56.xz + _1068, _77_m56.yw + _1068, _1053.xy).xy));
@@ -1362,9 +1362,9 @@ void comp_main()
                         float _1118 = 1.0f - _78.SampleLevel(_7, (_1048 + _940) * _77_m37.x, 0.0f).x;
                         float _1124 = clamp((_1106 - _1118) / (((_77_m53.y * _1065.w) + _77_m53.x) - _1118), 0.0f, 1.0f);
                         float _1130 = (_715 + _1106) + _1124;
-                        float3 _1132 = BasicCloudSampleWorldPos + (_77_m28.xyz * 2.0f);
+                        float3 _1132 = _518 + (_77_m28.xyz * 2.0f);
                         float4 _1137 = _82.SampleLevel(_7, (_1132.xy * _77_m28.w) + 0.5f.xx, 0.0f);
-                        float _1146 = max(0.0f, clamp(((length(_1132 - SphereCenter) - 318000.0f) - _77_m27.x) * 0.00076923076994717121124267578125f, 0.0f, 1.0f) - _1137.z);
+                        float _1146 = max(0.0f, clamp(((length(_1132 - _280) - 318000.0f) - _77_m27.x) * 0.00076923076994717121124267578125f, 0.0f, 1.0f) - _1137.z);
                         float4 _1149 = _81.SampleLevel(_83, float2(0.0f, _1146), 0.0f);
                         float2 _1152 = 1.0f.xx - _1149.xy;
                         float _1161 = min(1.0f, dot(float2(1.0f, _1149.z), smoothstep(_77_m56.xz + _1152, _77_m56.yw + _1152, _1137.xy).xy));
@@ -1382,9 +1382,9 @@ void comp_main()
                             break;
                         } while(false);
                         float _1201 = 1.0f - _78.SampleLevel(_7, (_1132 + _940) * _77_m37.x, 0.0f).x;
-                        float3 _1214 = BasicCloudSampleWorldPos + (_77_m28.xyz * 4.0f);
+                        float3 _1214 = _518 + (_77_m28.xyz * 4.0f);
                         float4 _1219 = _82.SampleLevel(_7, (_1214.xy * _77_m28.w) + 0.5f.xx, 0.0f);
-                        float _1228 = max(0.0f, clamp(((length(_1214 - SphereCenter) - 318000.0f) - _77_m27.x) * 0.00076923076994717121124267578125f, 0.0f, 1.0f) - _1219.z);
+                        float _1228 = max(0.0f, clamp(((length(_1214 - _280) - 318000.0f) - _77_m27.x) * 0.00076923076994717121124267578125f, 0.0f, 1.0f) - _1219.z);
                         float4 _1231 = _81.SampleLevel(_83, float2(0.0f, _1228), 0.0f);
                         float2 _1234 = 1.0f.xx - _1231.xy;
                         float _1243 = min(1.0f, dot(float2(1.0f, _1231.z), smoothstep(_77_m56.xz + _1234, _77_m56.yw + _1234, _1219.xy).xy));
@@ -1402,9 +1402,9 @@ void comp_main()
                             break;
                         } while(false);
                         float _1283 = 1.0f - _78.SampleLevel(_7, (_1214 + _940) * _77_m37.x, 0.0f).x;
-                        float3 _1302 = BasicCloudSampleWorldPos + float3(0.0f, 0.0f, 100.0f);
+                        float3 _1302 = _518 + float3(0.0f, 0.0f, 100.0f);
                         float4 _1307 = _82.SampleLevel(_7, (_1302.xy * _77_m28.w) + 0.5f.xx, 0.0f);
-                        float _1316 = max(0.0f, clamp(((length(_1302 - SphereCenter) - 318000.0f) - _77_m27.x) * 0.00076923076994717121124267578125f, 0.0f, 1.0f) - _1307.z);
+                        float _1316 = max(0.0f, clamp(((length(_1302 - _280) - 318000.0f) - _77_m27.x) * 0.00076923076994717121124267578125f, 0.0f, 1.0f) - _1307.z);
                         float4 _1319 = _81.SampleLevel(_83, float2(0.0f, _1316), 0.0f);
                         float2 _1322 = 1.0f.xx - _1319.xy;
                         float _1331 = min(1.0f, dot(float2(1.0f, _1319.z), smoothstep(_77_m56.xz + _1322, _77_m56.yw + _1322, _1307.xy).xy));
@@ -1425,16 +1425,16 @@ void comp_main()
                     }
                     else
                     {
-                        _1379 = exp((-CloudDensity) * _77_m43.z).xx;
+                        _1379 = exp((-_748) * _77_m43.z).xx;
                     }
                     float4 _1391 = _273;
                     _1391.x = _1379.x * clamp(_834 * _77_m33[1].w, 0.0f, 1.0f);
                     float4 _1392 = _1391;
-                    _1392.y = (_1379.y * _835) * (max(_445, clamp(CloudDensity * _77_m48.w, 0.0f, 1.0f) * _77_m48.z) + (_458 * lerp(CloudDensity, 1.0f, _77_m45.w)));
+                    _1392.y = (_1379.y * _835) * (max(_445, clamp(_748 * _77_m48.w, 0.0f, 1.0f) * _77_m48.z) + (_458 * lerp(_748, 1.0f, _77_m45.w)));
                     float4 _1393 = _1392;
                     _1393.z = _1379.y * (_852 ? _834 : _835);
                     float4 _1400 = _1393;
-                    _1400.w = (1.0f - (_715 / CloudDensity)) * clamp((CurrentRayTracingDistance - 300.0f) * 0.004999999888241291046142578125f, 0.0f, 1.0f);
+                    _1400.w = (1.0f - (_715 / _748)) * clamp((_487 - 300.0f) * 0.004999999888241291046142578125f, 0.0f, 1.0f);
                     _1401 = _1400;
                 }
                 else
@@ -1442,17 +1442,17 @@ void comp_main()
                     _1401 = 0.0f.xxxx;
                 }
 
-                float4 _1402 = _1401 * CloudDensity;
-                float ThisSampleTransmittanceFade = exp((-CloudDensity) * CurrentRayTracingBlockLength);                  //()   //当前块的Transmittance衰减
-                float NextTransmittance = TotalTransmittance * ThisSampleTransmittanceFade;                         //剩余的Transmittance * 当前块的衰减
+                float4 _1402 = _1401 * _748;
+                float _1405 = exp((-_748) * _475);                  //()   //当前块的Transmittance衰减
+                float _1413 = _489 * _1405;                         //剩余的Transmittance * 当前块的衰减
 
-                float _1414 = NextTransmittance * NextTransmittance;                        //包含当前块Transmittance ^2
+                float _1414 = _1413 * _1413;                        //包含当前块Transmittance ^2
                 int _1431;
 
 
-                if (true && (CurrentPointFadeCount == 0))                                    //如果当前RayTracing Section index 为0
+                if (true && (_479 == 0))                                    //如果当前RayTracing Section index 为0
                 {
-                    _1431 = int(4.0f * (1.0f - (CurrentRayTracingDistance / _77_m37.w)));        //_1431 = int( 4.0 * ( 1 - ( 当前RayTracingDistance / MaxRayTracingDistance)))  0, 1, 2, 3  剩余的Raytracing Section
+                    _1431 = int(4.0f * (1.0f - (_487 / _77_m37.w)));        //_1431 = int( 4.0 * ( 1 - ( 当前RayTracingDistance / MaxRayTracingDistance)))  0, 1, 2, 3  剩余的Raytracing Section
                 }
                 else                                                        //如果当前的RayTracing Section index 不为0
                 {
@@ -1463,10 +1463,10 @@ void comp_main()
 
 
                 bool _1436 = (
-                                (!BIsCloudOfThisSample) &&                              //如果当前雾不够浓         
-                                (CurrentPointFadeCount > 0)                              //当前块的RayTracing Section Index 》 0
+                                (!_569) &&                              //如果当前雾不够浓         
+                                (_479 > 0)                              //当前块的RayTracing Section Index 》 0
                             ) && 
-                                (!PreFrameIsCloud);                                //之前不存在雾浓度，在这一个Ray Tracing Section
+                                (!_473);                                //之前不存在雾浓度，在这一个Ray Tracing Section
 
 
                 float _1445;
@@ -1475,23 +1475,23 @@ void comp_main()
 
                 if (_1436)
                 {
-                    float _1442 = CurrentRayTracingBlockLength * pow(1.0f / CurrentRayDistanceFadePar, float(CurrentPointFadeCount));
-                    _1445 = CurrentRayTracingDistance + (MaskNoise64 * _1442);
+                    float _1442 = _475 * pow(1.0f / _471, float(_479));
+                    _1445 = _487 + (_361 * _1442);
                     _1446 = _1442;
                 }
                 else
                 {
-                    _1445 = CurrentRayTracingDistance;
-                    _1446 = CurrentRayTracingBlockLength;                                       //单位块的距离
+                    _1445 = _487;
+                    _1446 = _475;                                       //单位块的距离
                 }
 
 
-                int _1447 = _1436 ? 0 : CurrentPointFadeCount;
+                int _1447 = _1436 ? 0 : _479;
 
-                bool _1450 = (BIsCloudOfThisSample &&                                                //BIsCloudOfThisSample当前雾效果的浓度已经足够大的化
-                                (_1447 > 0)) ? false : PreFrameIsCloud;
+                bool _1450 = (_569 &&                                                //_569当前雾效果的浓度已经足够大的化
+                                (_1447 > 0)) ? false : _473;
 
-                                // _1450 = ( BIsCloudOfThisSample && (_1447 > 0)) ? false : PreFrameIsCloud
+                                // _1450 = ( _569 && (_1447 > 0)) ? false : _473
                                 //       = reset to false
                                 //       = 473                   
 
@@ -1501,7 +1501,7 @@ void comp_main()
                 //#Section  新的单位块的距离
                 if (true && (!_1450))
                 {
-                    _1463 = _1446 * (1.0f + (_77_m12.z * (1.0f - clamp(absViewDirZ * 2.0f, 0.0f, 1.0f))));
+                    _1463 = _1446 * (1.0f + (_77_m12.z * (1.0f - clamp(_370 * 2.0f, 0.0f, 1.0f))));
                 }
                 else
                 {
@@ -1509,51 +1509,51 @@ void comp_main()
                 }
                 //#Section 单位块的距离End
 
-                _469 = _468 + (((_1402 - (_1402 * ThisSampleTransmittanceFade)) / max(CloudDensity, 9.9999999747524270787835121154785e-07f).xxxx) * TotalTransmittance);
+                _469 = _468 + (((_1402 - (_1402 * _1405)) / max(_748, 9.9999999747524270787835121154785e-07f).xxxx) * _489);
 
-                NewRayDistanceFadePar = CurrentRayDistanceFadePar;
+                _472 = _471;
 
 
                 _474 = _1450;           
     
                 //New block Distance
-                NewRayTracingBlockLength = _1463;
+                _476 = _1463;
 
                 //
                 _478 = _1431;
 
 
                           
-                NewPointFadeCount = _1447;           //480 = 0    重置为0            1436 ? 0 : CurrentPointFadeCount;
-                                        //480 = 0   ( CurrentPointFadeCount > 0 ) && ( !569 ) && ( !PreFrameIsCloud )
+                _480 = _1447;           //480 = 0    重置为0            1436 ? 0 : _479;
+                                        //480 = 0   ( _479 > 0 ) && ( !569 ) && ( !_473 )
 
                                         //480 = 479  使用之前的状态 
 
 
 
-                NewRecordRayTracingDistance = lerp(
-                                CurrentRecordRayTracingDistance,           //前一Loop RayTracing Distance 
-                                CurrentRayTracingDistance,           //当前Loop RayTracing Distance
+                _482 = lerp(
+                                _481,           //前一Loop RayTracing Distance 
+                                _487,           //当前Loop RayTracing Distance
                                 _1414 * _1414   //包含当前块Transmittance^4
                                 );              //新的记录的深度
 
 
 
                 _484 = _483 + (
-                                    (_835 * CurrentRayTracingBlockLength) * 
-                                                    clamp( (NextTransmittance - 0.20000000298023223876953125f) * 1.25f, 0.0f, 1.0f) 
+                                    (_835 * _475) * 
+                                                    clamp( (_1413 - 0.20000000298023223876953125f) * 1.25f, 0.0f, 1.0f) 
                                                     //包含当前块的Transmittance -0.2 ）* 1.25
                              );
 
 
-                NextRayTracingDistance = _1445 + _1463;           //新的RayTracing Distance
+                _488 = _1445 + _1463;           //新的RayTracing Distance
 
-                NewTransmittance = NextTransmittance;                   //当前剩余的Transmittance
+                _490 = _1413;                   //当前剩余的Transmittance
 
 
                 break;
             } while(false);
-            NextLoopIndex = LoopIndex + 1;
+            _486 = _485 + 1;
         }
         //Loop End
 
@@ -1564,10 +1564,10 @@ void comp_main()
         float3 _1533 = ((_77_m46.xyz * asfloat(_61.Load4(192)).xyz) * 1.0f) * _468.z;
         float3 _1540 = ((((((asfloat(_61.Load4(96)).xyz + _77_m47.xyz) * _77_m22.w) * (((_429.z * 0.5f) + 1.0f) * 0.666666686534881591796875f)) * _468.x) + _1530) + _1533).xyz + (((_1530 + _1533) * _468.w) * ((max(1.0f.xxx - ((_1511 * 10.0f) * _1511), 0.0f.xxx) + (max(1.0f.xxx - ((_1519 * 10.0f) * _1519), 0.0f.xxx) * 0.333000004291534423828125f)) * _77_m59.y));
         float4 _1542 = float4(_1540.x, _1540.y, _1540.z, float4(0.0f, 0.0f, 0.0f, 1.0f).w);
-        _1542.w = clamp((TotalTransmittance - _77_m37.z) / (1.0f - _77_m37.z), 0.0f, 1.0f);                 //TotalTransmittance
+        _1542.w = clamp((_489 - _77_m37.z) / (1.0f - _77_m37.z), 0.0f, 1.0f);
         _1543 = _1542;
 
-        _1544 = CurrentRecordRayTracingDistance;   //CurrentRecordRayTracingDistance 记录最终的云层的深度
+        _1544 = _481;   //_481 记录最终的云层的深度
 
         _1545 = _483;
     }
@@ -1584,7 +1584,7 @@ void comp_main()
 
 
 
-    float3 _1547 = normalize(TranslatedWorldViewDir);
+    float3 _1547 = normalize(_324);
     float _1562 = _306.x;
     float _1570 = _1545 + (_88.SampleLevel(_5, float3(_1562, _306.y, log2((clamp(min(_77_m50.z, _329) / _77_m50.y, 0.0f, 1.0f) * asfloat(_29.Load(1800))) + 1.0f) * asfloat(_29.Load(1796))), 0.0f).x * min(_329, _77_m50.z));
     float4 _1630;
