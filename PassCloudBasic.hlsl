@@ -950,7 +950,7 @@ void comp_main()
         float NewRayDistanceFadePar;
         bool _474;
         float NewRayTracingBlockLength;
-        int _478;
+        int NewMaxFadePointCount;
         int NewPointFadeCount;
         float NewRecordRayTracingDistance;
         float _484;
@@ -961,7 +961,7 @@ void comp_main()
 
         float CurrentRayTracingBlockLength = BasicBlockLength;              //单位块的距离
 
-        int _477 = 4;
+        int CurrentMaxFadePointCount = 4;
         int CurrentPointFadeCount = 0;
         int LoopIndex = 0;
 
@@ -978,7 +978,7 @@ void comp_main()
                 CurrentRayDistanceFadePar = NewRayDistanceFadePar,            //NewRayDistanceFadePar 如果是cloudDensity 》 的部分，最终将修正 一个_77_m40.w  的常量值
                 PreFrameIsCloud = _474,            //_474 Section中是否存在浓度够
                 CurrentRayTracingBlockLength = NewRayTracingBlockLength,            //NewRayTracingBlockLength 新的单位块的距离
-                _477 = _478,            //_478 记录剩余的RayTracing Section Index
+                CurrentMaxFadePointCount = NewMaxFadePointCount,            //NewMaxFadePointCount 记录剩余的RayTracing Section Index
                 CurrentPointFadeCount = NewPointFadeCount,            //NewPointFadeCount 记录当前的RayTracing Section index
                 CurrentRecordRayTracingDistance = NewRecordRayTracingDistance,            //CurrentRecordRayTracingDistance 最终的记录的深度，  
                 _483 = _484, 
@@ -1077,7 +1077,7 @@ void comp_main()
                 if (
                     (
                         (float(BIsCloudOfThisSample) > 0.0f) && 
-                        (CurrentPointFadeCount < _477)                       //CurrentRayTracing Section index < 剩余的RayTracing Section index 初始值为4， 对应的剩余Distance/maxDistance * 4 拆分为
+                        (CurrentPointFadeCount < CurrentMaxFadePointCount)                       //CurrentRayTracing Section index < 剩余的RayTracing Section index 初始值为4， 对应的剩余Distance/maxDistance * 4 拆分为
                     ) && true)                              //满足当前条件的话，当前Sample点 完结
                 {
                     float DistanceFadeScale = lerp(
@@ -1092,7 +1092,7 @@ void comp_main()
                     _474 = true;                            //当前存在cloud 浓度够的Sample点
 
                     NewRayTracingBlockLength = NewBlockLength;                            //新的单位块的长度
-                    _478 = _477;
+                    NewMaxFadePointCount = CurrentMaxFadePointCount;
                     NewPointFadeCount = CurrentPointFadeCount + 1;
                     NewRecordRayTracingDistance = CurrentRecordRayTracingDistance;
                     _484 = _483;
@@ -1456,7 +1456,7 @@ void comp_main()
                 }
                 else                                                        //如果当前的RayTracing Section index 不为0
                 {
-                    _1431 = _477;                                           //_1431 = _477      //最大的RayTracing Section Index = CurrentRayTracingSection Index
+                    _1431 = CurrentMaxFadePointCount;                                           //_1431 = CurrentMaxFadePointCount      //最大的RayTracing Section Index = CurrentRayTracingSection Index
                 }
 
 
@@ -1520,7 +1520,7 @@ void comp_main()
                 NewRayTracingBlockLength = _1463;
 
                 //
-                _478 = _1431;
+                NewMaxFadePointCount = _1431;
 
 
                           
